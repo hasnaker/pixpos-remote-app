@@ -21,6 +21,14 @@ import '../../common/widgets/autocomplete.dart';
 import '../../models/platform_model.dart';
 import '../../desktop/widgets/material_mod_popup_menu.dart' as mod_menu;
 
+// Import Apple Design System
+import 'package:flutter_hbb/design_system/apple_theme.dart';
+import 'package:flutter_hbb/design_system/apple_typography.dart';
+import 'package:flutter_hbb/design_system/components/apple_card.dart';
+import 'package:flutter_hbb/design_system/components/apple_button.dart';
+import 'package:flutter_hbb/design_system/components/apple_text_field.dart';
+import 'package:flutter_hbb/design_system/components/status_indicator.dart';
+
 class OnlineStatusWidget extends StatefulWidget {
   const OnlineStatusWidget({Key? key, this.onSvcStatusChanged})
       : super(key: key);
@@ -66,16 +74,25 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
   @override
   Widget build(BuildContext context) {
     final isIncomingOnly = bind.isIncomingOnly();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     startServiceWidget() => Offstage(
           offstage: !_svcStopped.value,
-          child: InkWell(
-                  onTap: () async {
-                    await start_service(true);
-                  },
-                  child: Text(translate("Start service"),
-                      style: TextStyle(
-                          decoration: TextDecoration.underline, fontSize: em)))
-              .marginOnly(left: em),
+          child: GestureDetector(
+            onTap: () async {
+              await start_service(true);
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Text(
+                translate("Start service"),
+                style: AppleTypography.subheadline(context).copyWith(
+                  color: AppleTheme.primaryBlue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ).marginOnly(left: AppleTheme.spacing12),
         );
 
     setupServerWidget() => Flexible(
@@ -86,21 +103,19 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(', ', style: TextStyle(fontSize: em)),
+                Text(', ', style: AppleTypography.subheadline(context)),
                 Flexible(
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: onUsePublicServerGuide,
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            translate('setup_server_tip'),
-                            style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                fontSize: em),
-                          ),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Text(
+                        translate('setup_server_tip'),
+                        style: AppleTypography.subheadline(context).copyWith(
+                          color: AppleTheme.primaryBlue,
+                          decoration: TextDecoration.underline,
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 )
@@ -109,22 +124,23 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
           ),
         );
 
+    // Get status color and connection status
+    ConnectionStatus connectionStatus;
+    if (_svcStopped.value || stateGlobal.svcStatus.value == SvcStatus.connecting) {
+      connectionStatus = ConnectionStatus.connecting;
+    } else if (stateGlobal.svcStatus.value == SvcStatus.ready) {
+      connectionStatus = ConnectionStatus.connected;
+    } else {
+      connectionStatus = ConnectionStatus.error;
+    }
+
     basicWidget() => Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              height: 8,
-              width: 8,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                color: _svcStopped.value ||
-                        stateGlobal.svcStatus.value == SvcStatus.connecting
-                    ? kColorWarn
-                    : (stateGlobal.svcStatus.value == SvcStatus.ready
-                        ? Color.fromARGB(255, 50, 190, 166)
-                        : Color.fromARGB(255, 224, 79, 95)),
-              ),
-            ).marginSymmetric(horizontal: em),
+            StatusIndicator(
+              status: connectionStatus,
+              size: AppleTheme.statusIndicatorSize,
+            ).marginSymmetric(horizontal: AppleTheme.spacing12),
             Container(
               width: isIncomingOnly ? 226 : null,
               child: _buildConnStatusMsg(),
@@ -139,6 +155,7 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
 
     return Container(
       height: height,
+      padding: EdgeInsets.symmetric(vertical: AppleTheme.spacing8),
       child: Obx(() => isIncomingOnly
           ? Column(
               children: [
@@ -146,11 +163,11 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
                 Align(
                         child: startServiceWidget(),
                         alignment: Alignment.centerLeft)
-                    .marginOnly(top: 2.0, left: 22.0),
+                    .marginOnly(top: AppleTheme.spacing4, left: AppleTheme.spacing24),
               ],
             )
           : basicWidget()),
-    ).paddingOnly(right: isIncomingOnly ? 8 : 0);
+    ).paddingOnly(right: isIncomingOnly ? AppleTheme.spacing8 : 0);
   }
 
   _buildConnStatusMsg() {
@@ -163,7 +180,7 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
               : stateGlobal.svcStatus.value == SvcStatus.notReady
                   ? translate("not_ready_status")
                   : translate('Ready'),
-      style: TextStyle(fontSize: em),
+      style: AppleTypography.subheadline(context),
     );
   }
 
@@ -313,13 +330,16 @@ class _ConnectionPageState extends State<ConnectionPage>
               children: [
                 Flexible(child: _buildRemoteIDTextField(context)),
               ],
-            ).marginOnly(top: 22),
-            SizedBox(height: 12),
-            Divider().paddingOnly(right: 12),
+            ).marginOnly(top: AppleTheme.spacing24),
+            SizedBox(height: AppleTheme.spacing12),
+            Divider(
+              height: 1,
+              color: AppleTheme.separatorColor(context),
+            ).paddingOnly(right: AppleTheme.spacing12),
             Expanded(child: PeerTabPage()),
           ],
-        ).paddingOnly(left: 12.0)),
-        if (!isOutgoingOnly) const Divider(height: 1),
+        ).paddingOnly(left: AppleTheme.spacing12)),
+        if (!isOutgoingOnly) Divider(height: 1, color: AppleTheme.separatorColor(context)),
         if (!isOutgoingOnly) OnlineStatusWidget()
       ],
     );
@@ -341,97 +361,109 @@ class _ConnectionPageState extends State<ConnectionPage>
   /// UI for the remote ID TextField.
   /// Search for a peer.
   Widget _buildRemoteIDTextField(BuildContext context) {
-    var w = Container(
-      width: 320 + 20 * 2,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-      decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(13)),
-          border: Border.all(color: Theme.of(context).colorScheme.background)),
-      child: Ink(
-        child: Column(
-          children: [
-            getConnectionPageTitle(context, false).marginOnly(bottom: 15),
-            Row(
-              children: [
-                Expanded(
-                    child: RawAutocomplete<Peer>(
-                  optionsBuilder: (TextEditingValue textEditingValue) {
-                    if (textEditingValue.text == '') {
-                      _autocompleteOpts = const Iterable<Peer>.empty();
-                    } else if (_allPeersLoader.peers.isEmpty &&
-                        !_allPeersLoader.isPeersLoaded) {
-                      Peer emptyPeer = Peer(
-                        id: '',
-                        username: '',
-                        hostname: '',
-                        alias: '',
-                        platform: '',
-                        tags: [],
-                        hash: '',
-                        password: '',
-                        forceAlwaysRelay: false,
-                        rdpPort: '',
-                        rdpUsername: '',
-                        loginName: '',
-                        device_group_name: '',
-                        note: '',
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    var w = AppleCard(
+      padding: EdgeInsets.all(AppleTheme.spacing20),
+      child: Column(
+        children: [
+          getConnectionPageTitle(context, false).marginOnly(bottom: AppleTheme.spacing16),
+          Row(
+            children: [
+              Expanded(
+                  child: RawAutocomplete<Peer>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text == '') {
+                    _autocompleteOpts = const Iterable<Peer>.empty();
+                  } else if (_allPeersLoader.peers.isEmpty &&
+                      !_allPeersLoader.isPeersLoaded) {
+                    Peer emptyPeer = Peer(
+                      id: '',
+                      username: '',
+                      hostname: '',
+                      alias: '',
+                      platform: '',
+                      tags: [],
+                      hash: '',
+                      password: '',
+                      forceAlwaysRelay: false,
+                      rdpPort: '',
+                      rdpUsername: '',
+                      loginName: '',
+                      device_group_name: '',
+                      note: '',
+                    );
+                    _autocompleteOpts = [emptyPeer];
+                  } else {
+                    String textWithoutSpaces =
+                        textEditingValue.text.replaceAll(" ", "");
+                    if (int.tryParse(textWithoutSpaces) != null) {
+                      textEditingValue = TextEditingValue(
+                        text: textWithoutSpaces,
+                        selection: textEditingValue.selection,
                       );
-                      _autocompleteOpts = [emptyPeer];
-                    } else {
-                      String textWithoutSpaces =
-                          textEditingValue.text.replaceAll(" ", "");
-                      if (int.tryParse(textWithoutSpaces) != null) {
-                        textEditingValue = TextEditingValue(
-                          text: textWithoutSpaces,
-                          selection: textEditingValue.selection,
-                        );
-                      }
-                      String textToFind = textEditingValue.text.toLowerCase();
-                      _autocompleteOpts = _allPeersLoader.peers
-                          .where((peer) =>
-                              peer.id.toLowerCase().contains(textToFind) ||
-                              peer.username
-                                  .toLowerCase()
-                                  .contains(textToFind) ||
-                              peer.hostname
-                                  .toLowerCase()
-                                  .contains(textToFind) ||
-                              peer.alias.toLowerCase().contains(textToFind))
-                          .toList();
                     }
-                    return _autocompleteOpts;
-                  },
-                  focusNode: _idFocusNode,
-                  textEditingController: _idEditingController,
-                  fieldViewBuilder: (
-                    BuildContext context,
-                    TextEditingController fieldTextEditingController,
-                    FocusNode fieldFocusNode,
-                    VoidCallback onFieldSubmitted,
-                  ) {
-                    updateTextAndPreserveSelection(
-                        fieldTextEditingController, _idController.text);
-                    return Obx(() => TextField(
+                    String textToFind = textEditingValue.text.toLowerCase();
+                    _autocompleteOpts = _allPeersLoader.peers
+                        .where((peer) =>
+                            peer.id.toLowerCase().contains(textToFind) ||
+                            peer.username
+                                .toLowerCase()
+                                .contains(textToFind) ||
+                            peer.hostname
+                                .toLowerCase()
+                                .contains(textToFind) ||
+                            peer.alias.toLowerCase().contains(textToFind))
+                        .toList();
+                  }
+                  return _autocompleteOpts;
+                },
+                focusNode: _idFocusNode,
+                textEditingController: _idEditingController,
+                fieldViewBuilder: (
+                  BuildContext context,
+                  TextEditingController fieldTextEditingController,
+                  FocusNode fieldFocusNode,
+                  VoidCallback onFieldSubmitted,
+                ) {
+                  updateTextAndPreserveSelection(
+                      fieldTextEditingController, _idController.text);
+                  return Obx(() => AnimatedContainer(
+                    duration: AppleTheme.durationNormal,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppleTheme.darkSecondary : AppleTheme.lightBackground,
+                      borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+                      border: Border.all(
+                        color: _idInputFocused.value 
+                            ? AppleTheme.primaryBlue 
+                            : (isDark ? AppleTheme.darkTertiary : AppleTheme.lightSecondary),
+                        width: _idInputFocused.value ? 2 : 1,
+                      ),
+                    ),
+                    child: TextField(
                           autocorrect: false,
                           enableSuggestions: false,
                           keyboardType: TextInputType.visiblePassword,
                           focusNode: fieldFocusNode,
-                          style: const TextStyle(
+                          style: AppleTypography.title3(context).copyWith(
                             fontFamily: 'WorkSans',
-                            fontSize: 22,
                             height: 1.4,
                           ),
                           maxLines: 1,
-                          cursorColor:
-                              Theme.of(context).textTheme.titleLarge?.color,
+                          cursorColor: AppleTheme.primaryBlue,
                           decoration: InputDecoration(
                               filled: false,
                               counterText: '',
                               hintText: _idInputFocused.value
                                   ? null
                                   : translate('Enter Remote ID'),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 13)),
+                              hintStyle: AppleTypography.title3(context).copyWith(
+                                color: AppleTheme.secondaryTextColor(context),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: AppleTheme.spacing16, 
+                                  vertical: AppleTheme.spacing12),
+                              border: InputBorder.none),
                           controller: fieldTextEditingController,
                           inputFormatters: [IDTextInputFormatter()],
                           onChanged: (v) {
@@ -440,173 +472,167 @@ class _ConnectionPageState extends State<ConnectionPage>
                           onSubmitted: (_) {
                             onConnect();
                           },
-                        ).workaroundFreezeLinuxMint());
-                  },
-                  onSelected: (option) {
-                    setState(() {
-                      _idController.id = option.id;
-                      FocusScope.of(context).unfocus();
-                    });
-                  },
-                  optionsViewBuilder: (BuildContext context,
-                      AutocompleteOnSelected<Peer> onSelected,
-                      Iterable<Peer> options) {
-                    options = _autocompleteOpts;
-                    double maxHeight = options.length * 50;
-                    if (options.length == 1) {
-                      maxHeight = 52;
-                    } else if (options.length == 3) {
-                      maxHeight = 146;
-                    } else if (options.length == 4) {
-                      maxHeight = 193;
-                    }
-                    maxHeight = maxHeight.clamp(0, 200);
+                        ).workaroundFreezeLinuxMint(),
+                  ));
+                },
+                onSelected: (option) {
+                  setState(() {
+                    _idController.id = option.id;
+                    FocusScope.of(context).unfocus();
+                  });
+                },
+                optionsViewBuilder: (BuildContext context,
+                    AutocompleteOnSelected<Peer> onSelected,
+                    Iterable<Peer> options) {
+                  options = _autocompleteOpts;
+                  double maxHeight = options.length * 50;
+                  if (options.length == 1) {
+                    maxHeight = 52;
+                  } else if (options.length == 3) {
+                    maxHeight = 146;
+                  } else if (options.length == 4) {
+                    maxHeight = 193;
+                  }
+                  maxHeight = maxHeight.clamp(0, 200);
 
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 5,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                              borderRadius: BorderRadius.circular(5),
-                              child: Material(
-                                elevation: 4,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: maxHeight,
-                                    maxWidth: 319,
-                                  ),
-                                  child: _allPeersLoader.peers.isEmpty &&
-                                          !_allPeersLoader.isPeersLoaded
-                                      ? Container(
-                                          height: 80,
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ))
-                                      : Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 5),
-                                          child: ListView(
-                                            children: options
-                                                .map((peer) =>
-                                                    AutocompletePeerTile(
-                                                        onSelect: () =>
-                                                            onSelected(peer),
-                                                        peer: peer))
-                                                .toList(),
-                                          ),
-                                        ),
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: AppleTheme.shadow(context),
+                          borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+                        ),
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+                            child: Material(
+                              color: AppleTheme.surfaceColor(context),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: maxHeight,
+                                  maxWidth: 319,
                                 ),
-                              ))),
-                    );
-                  },
-                )),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 13.0),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                SizedBox(
-                  height: 28.0,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      onConnect();
+                                child: _allPeersLoader.peers.isEmpty &&
+                                        !_allPeersLoader.isPeersLoaded
+                                    ? Container(
+                                        height: 80,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(AppleTheme.primaryBlue),
+                                          ),
+                                        ))
+                                    : Padding(
+                                        padding: EdgeInsets.only(top: AppleTheme.spacing8),
+                                        child: ListView(
+                                          children: options
+                                              .map((peer) =>
+                                                  AutocompletePeerTile(
+                                                      onSelect: () =>
+                                                          onSelected(peer),
+                                                      peer: peer))
+                                              .toList(),
+                                        ),
+                                      ),
+                              ),
+                            ))),
+                  );
+                },
+              )),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.only(top: AppleTheme.spacing16),
+            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              AppleButton.primary(
+                text: translate("Connect"),
+                onPressed: () => onConnect(),
+                size: AppleButtonSize.small,
+              ),
+              SizedBox(width: AppleTheme.spacing8),
+              Container(
+                height: AppleTheme.buttonHeightSmall,
+                width: AppleTheme.buttonHeightSmall,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDark ? AppleTheme.darkTertiary : AppleTheme.lightSecondary,
+                  ),
+                  borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
+                ),
+                child: Center(
+                  child: StatefulBuilder(
+                    builder: (context, setState) {
+                      var offset = Offset(0, 0);
+                      return Obx(() => InkWell(
+                            borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
+                            child: _menuOpen.value
+                                ? Transform.rotate(
+                                    angle: pi,
+                                    child: Icon(IconFont.more, size: 14, color: AppleTheme.primaryBlue),
+                                  )
+                                : Icon(IconFont.more, size: 14, color: AppleTheme.secondaryTextColor(context)),
+                            onTapDown: (e) {
+                              offset = e.globalPosition;
+                            },
+                            onTap: () async {
+                              _menuOpen.value = true;
+                              final x = offset.dx;
+                              final y = offset.dy;
+                              await mod_menu
+                                  .showMenu(
+                                context: context,
+                                position: RelativeRect.fromLTRB(x, y, x, y),
+                                items: [
+                                  (
+                                    'Transfer file',
+                                    () => onConnect(isFileTransfer: true)
+                                  ),
+                                  (
+                                    'View camera',
+                                    () => onConnect(isViewCamera: true)
+                                  ),
+                                  (
+                                    '${translate('Terminal')} (beta)',
+                                    () => onConnect(isTerminal: true)
+                                  ),
+                                ]
+                                    .map((e) => MenuEntryButton<String>(
+                                          childBuilder: (TextStyle? style) =>
+                                              Text(
+                                            translate(e.$1),
+                                            style: style,
+                                          ),
+                                          proc: () => e.$2(),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal:
+                                                  kDesktopMenuPadding.left),
+                                          dismissOnClicked: true,
+                                        ))
+                                    .map((e) => e.build(
+                                        context,
+                                        const MenuConfig(
+                                            commonColor: CustomPopupMenuTheme
+                                                .commonColor,
+                                            height:
+                                                CustomPopupMenuTheme.height,
+                                            dividerHeight:
+                                                CustomPopupMenuTheme
+                                                    .dividerHeight)))
+                                    .expand((i) => i)
+                                    .toList(),
+                                elevation: 8,
+                              )
+                                  .then((_) {
+                                _menuOpen.value = false;
+                              });
+                            },
+                          ));
                     },
-                    child: Text(translate("Connect")),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  height: 28.0,
-                  width: 28.0,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).dividerColor),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: StatefulBuilder(
-                      builder: (context, setState) {
-                        var offset = Offset(0, 0);
-                        return Obx(() => InkWell(
-                              child: _menuOpen.value
-                                  ? Transform.rotate(
-                                      angle: pi,
-                                      child: Icon(IconFont.more, size: 14),
-                                    )
-                                  : Icon(IconFont.more, size: 14),
-                              onTapDown: (e) {
-                                offset = e.globalPosition;
-                              },
-                              onTap: () async {
-                                _menuOpen.value = true;
-                                final x = offset.dx;
-                                final y = offset.dy;
-                                await mod_menu
-                                    .showMenu(
-                                  context: context,
-                                  position: RelativeRect.fromLTRB(x, y, x, y),
-                                  items: [
-                                    (
-                                      'Transfer file',
-                                      () => onConnect(isFileTransfer: true)
-                                    ),
-                                    (
-                                      'View camera',
-                                      () => onConnect(isViewCamera: true)
-                                    ),
-                                    (
-                                      '${translate('Terminal')} (beta)',
-                                      () => onConnect(isTerminal: true)
-                                    ),
-                                  ]
-                                      .map((e) => MenuEntryButton<String>(
-                                            childBuilder: (TextStyle? style) =>
-                                                Text(
-                                              translate(e.$1),
-                                              style: style,
-                                            ),
-                                            proc: () => e.$2(),
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal:
-                                                    kDesktopMenuPadding.left),
-                                            dismissOnClicked: true,
-                                          ))
-                                      .map((e) => e.build(
-                                          context,
-                                          const MenuConfig(
-                                              commonColor: CustomPopupMenuTheme
-                                                  .commonColor,
-                                              height:
-                                                  CustomPopupMenuTheme.height,
-                                              dividerHeight:
-                                                  CustomPopupMenuTheme
-                                                      .dividerHeight)))
-                                      .expand((i) => i)
-                                      .toList(),
-                                  elevation: 8,
-                                )
-                                    .then((_) {
-                                  _menuOpen.value = false;
-                                });
-                              },
-                            ));
-                      },
-                    ),
-                  ),
-                ),
-              ]),
-            ),
-          ],
-        ),
+              ),
+            ]),
+          ),
+        ],
       ),
     );
     return Container(

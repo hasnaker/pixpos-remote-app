@@ -46,10 +46,10 @@ fn main() {
         -k, --key=[KEY] ''
        -s, --server=[] 'Start server'",
     );
-    let matches = App::new("rustdesk")
+    let matches = App::new("pixpos-remote")
         .version(crate::VERSION)
-        .author("Purslane Ltd<info@rustdesk.com>")
-        .about("RustDesk command line tool")
+        .author("PixPos <info@pixpos.com>")
+        .about("PixPos Remote command line tool")
         .args_from_usage(&args)
         .get_matches();
     use hbb_common::{config::LocalConfig, env_logger::*};

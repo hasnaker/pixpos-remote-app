@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/mobile/pages/server_page.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
 import 'package:flutter_hbb/web/settings_page.dart';
+import 'package:flutter_hbb/design_system/design_system.dart';
 import 'package:get/get.dart';
 import '../../common.dart';
 import '../../common/widgets/chat_page.dart';
@@ -61,6 +62,8 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return WillPopScope(
         onWillPop: () async {
           if (_selectedIndex != 0) {
@@ -73,37 +76,101 @@ class HomePageState extends State<HomePage> {
           return false;
         },
         child: Scaffold(
-          // backgroundColor: MyTheme.grayBg,
+          backgroundColor: isDark ? AppleTheme.darkBackground : AppleTheme.lightBackground,
           appBar: AppBar(
             centerTitle: true,
             title: appTitle(),
             actions: _pages.elementAt(_selectedIndex).appBarActions,
+            backgroundColor: isDark ? AppleTheme.darkSurface : AppleTheme.lightSurface,
+            elevation: 0,
+            toolbarHeight: AppleTheme.touchTargetMin + AppleTheme.spacing16,
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            key: navigationBarKey,
-            items: _pages
-                .map((page) =>
-                    BottomNavigationBarItem(icon: page.icon, label: page.title))
-                .toList(),
-            currentIndex: _selectedIndex,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: MyTheme.accent, //
-            unselectedItemColor: MyTheme.darkGray,
-            onTap: (index) => setState(() {
-              // close chat overlay when go chat page
-              if (_selectedIndex != index) {
-                _selectedIndex = index;
-                if (isChatPageCurrentTab) {
-                  gFFI.chatModel.hideChatIconOverlay();
-                  gFFI.chatModel.hideChatWindowOverlay();
-                  gFFI.chatModel.mobileClearClientUnread(
-                      gFFI.chatModel.currentKey.connId);
-                }
-              }
-            }),
+          bottomNavigationBar: _buildAppleBottomNav(isDark),
+          body: AnimatedSwitcher(
+            duration: AppleTheme.durationNormal,
+            child: _pages.elementAt(_selectedIndex),
           ),
-          body: _pages.elementAt(_selectedIndex),
         ));
+  }
+
+  Widget _buildAppleBottomNav(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppleTheme.darkSurface : AppleTheme.lightSurface,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppleTheme.darkSeparator : AppleTheme.lightSeparator,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 56 + AppleTheme.spacing8,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _pages.asMap().entries.map((entry) {
+              final index = entry.key;
+              final page = entry.value;
+              final isSelected = index == _selectedIndex;
+              
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() {
+                    if (_selectedIndex != index) {
+                      _selectedIndex = index;
+                      if (isChatPageCurrentTab) {
+                        gFFI.chatModel.hideChatIconOverlay();
+                        gFFI.chatModel.hideChatWindowOverlay();
+                        gFFI.chatModel.mobileClearClientUnread(
+                            gFFI.chatModel.currentKey.connId);
+                      }
+                    }
+                  }),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      minHeight: AppleTheme.touchTargetMin,
+                      minWidth: AppleTheme.touchTargetMin,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: AppleTheme.durationNormal,
+                          child: IconTheme(
+                            data: IconThemeData(
+                              size: 24,
+                              color: isSelected 
+                                ? AppleTheme.primaryBlue
+                                : (isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText),
+                            ),
+                            child: page.icon,
+                          ),
+                        ),
+                        SizedBox(height: AppleTheme.spacing4),
+                        AnimatedDefaultTextStyle(
+                          duration: AppleTheme.durationNormal,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected 
+                              ? AppleTheme.primaryBlue
+                              : (isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText),
+                          ),
+                          child: Text(page.title),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget appTitle() {

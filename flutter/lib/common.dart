@@ -250,24 +250,28 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
 class MyTheme {
   MyTheme._();
 
-  static const Color grayBg = Color(0xFFEFEFF2);
-  static const Color accent = Color(0xFF0071FF);
-  static const Color accent50 = Color(0x770071FF);
-  static const Color accent80 = Color(0xAA0071FF);
-  static const Color canvasColor = Color(0xFF212121);
-  static const Color border = Color(0xFFCCCCCC);
-  static const Color idColor = Color(0xFF00B6F0);
-  static const Color darkGray = Color.fromARGB(255, 148, 148, 148);
-  static const Color cmIdColor = Color(0xFF21790B);
-  static const Color dark = Colors.black87;
-  static const Color button = Color(0xFF2C8CFF);
-  static const Color hoverBorder = Color(0xFF999999);
+  // ============================================
+  // APPLE 2026 DESIGN SYSTEM COLORS
+  // ============================================
+  
+  static const Color grayBg = Color(0xFFF2F2F7);  // Apple System Gray 6
+  static const Color accent = Color(0xFF007AFF);   // Apple Blue
+  static const Color accent50 = Color(0x80007AFF);
+  static const Color accent80 = Color(0xCC007AFF);
+  static const Color canvasColor = Color(0xFF000000);  // True black for OLED
+  static const Color border = Color(0xFFE5E5EA);   // Apple Light Secondary
+  static const Color idColor = Color(0xFF007AFF);  // Apple Blue for IDs
+  static const Color darkGray = Color(0xFF8E8E93); // Apple Secondary Text
+  static const Color cmIdColor = Color(0xFF34C759); // Apple Green
+  static const Color dark = Color(0xFF1C1C1E);     // Apple Dark Surface
+  static const Color button = Color(0xFF007AFF);   // Apple Blue
+  static const Color hoverBorder = Color(0xFFC7C7CC); // Apple Tertiary
 
-  // ListTile
+  // ListTile with Apple-style rounded corners
   static const ListTileThemeData listTileTheme = ListTileThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.all(
-        Radius.circular(5),
+        Radius.circular(12),  // Apple medium radius
       ),
     ),
   );
@@ -282,12 +286,12 @@ class MyTheme {
         splashRadius: (isDesktop || isWebDesktop) ? 0 : kRadialReactionRadius);
   }
 
-  // Checkbox
+  // Checkbox with Apple-style rounded corners
   static const CheckboxThemeData checkboxTheme = CheckboxThemeData(
     splashRadius: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.all(
-        Radius.circular(5),
+        Radius.circular(6),  // Apple checkbox radius
       ),
     ),
   );
@@ -372,98 +376,170 @@ class MyTheme {
   );
 
   static ThemeData lightTheme = ThemeData(
-    // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
+    // Apple 2026 Design System - Light Theme
     useMaterial3: false,
     brightness: Brightness.light,
-    hoverColor: Color.fromARGB(255, 224, 224, 224),
-    scaffoldBackgroundColor: Colors.white,
-    dialogBackgroundColor: Colors.white,
+    primaryColor: accent,
+    hoverColor: Color(0xFFF2F2F7),  // Apple System Gray 6
+    scaffoldBackgroundColor: Color(0xFFFFFFFF),  // Pure white
+    dialogBackgroundColor: Color(0xFFFFFFFF),
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
+      backgroundColor: Color(0xFFFFFFFF),
+      foregroundColor: Color(0xFF000000),
+      elevation: 0,
     ),
-    dialogTheme: DialogTheme(
-      elevation: 15,
+    dialogTheme: DialogThemeData(
+      elevation: 24,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.0),
-        side: BorderSide(
-          width: 1,
-          color: grayBg,
-        ),
+        borderRadius: BorderRadius.circular(20.0),  // Apple XLarge radius
       ),
+      backgroundColor: Color(0xFFFFFFFF),
     ),
     scrollbarTheme: scrollbarTheme,
-    inputDecorationTheme: isDesktop
-        ? InputDecorationTheme(
-            fillColor: grayBg,
-            filled: true,
-            isDense: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          )
-        : null,
-    textTheme: const TextTheme(
-        titleLarge: TextStyle(fontSize: 19, color: Colors.black87),
-        titleSmall: TextStyle(fontSize: 14, color: Colors.black87),
-        bodySmall: TextStyle(fontSize: 12, color: Colors.black87, height: 1.25),
-        bodyMedium:
-            TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
-        labelLarge: TextStyle(fontSize: 16.0, color: MyTheme.accent80)),
-    cardColor: grayBg,
-    hintColor: Color(0xFFAAAAAA),
+    inputDecorationTheme: InputDecorationTheme(
+      fillColor: Color(0xFFF2F2F7),  // Apple System Gray 6
+      filled: true,
+      isDense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),  // Apple medium radius
+        borderSide: BorderSide(color: Color(0xFFE5E5EA)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Color(0xFFE5E5EA)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: accent, width: 2),
+      ),
+    ),
+    textTheme: TextTheme(
+      titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.4),
+      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF000000)),
+      titleSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF000000)),
+      bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, color: Color(0xFF000000), height: 1.5),
+      bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color(0xFF000000), height: 1.5),
+      bodySmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: Color(0xFF8E8E93), height: 1.4),
+      labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: accent),
+      labelMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF8E8E93)),
+      labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: Color(0xFF8E8E93)),
+    ),
+    cardColor: Color(0xFFFFFFFF),
+    cardTheme: CardThemeData(
+      color: Color(0xFFFFFFFF),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      shadowColor: Colors.black.withOpacity(0.08),
+    ),
+    hintColor: Color(0xFF8E8E93),  // Apple Secondary Text
     visualDensity: VisualDensity.adaptivePlatformDensity,
-    tabBarTheme: const TabBarTheme(
-      labelColor: Colors.black87,
+    tabBarTheme: TabBarThemeData(
+      labelColor: accent,
+      unselectedLabelColor: Color(0xFF8E8E93),
+      indicatorColor: accent,
     ),
     tooltipTheme: tooltipTheme(),
     splashColor: (isDesktop || isWebDesktop) ? Colors.transparent : null,
     highlightColor: (isDesktop || isWebDesktop) ? Colors.transparent : null,
     splashFactory: (isDesktop || isWebDesktop) ? NoSplash.splashFactory : null,
-    textButtonTheme: (isDesktop || isWebDesktop)
-        ? TextButtonThemeData(
-            style: TextButton.styleFrom(
-              splashFactory: NoSplash.splashFactory,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18.0),
-              ),
-            ),
-          )
-        : mobileTextButtonTheme,
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: accent,
+        splashFactory: (isDesktop || isWebDesktop) ? NoSplash.splashFactory : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MyTheme.accent,
+        backgroundColor: accent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(12.0),
         ),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: grayBg,
-        foregroundColor: Colors.black87,
+        foregroundColor: accent,
+        side: BorderSide(color: accent, width: 1.5),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return Colors.white;
+        return Color(0xFFFFFFFF);
+      }),
+      trackColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return Color(0xFF34C759);  // Apple Green
+        return Color(0xFFE5E5EA);
+      }),
+      splashRadius: 0,
+    ),
+    radioTheme: radioTheme(),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return accent;
+        return Colors.transparent;
+      }),
+      checkColor: MaterialStateProperty.all(Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      side: BorderSide(color: Color(0xFFC7C7CC), width: 1.5),
+      splashRadius: 0,
+    ),
+    listTileTheme: listTileTheme,
+    dividerColor: Color(0xFFE5E5EA),
+    dividerTheme: DividerThemeData(
+      color: Color(0xFFE5E5EA),
+      thickness: 0.5,
+      indent: 16,
+    ),
+    menuBarTheme: MenuBarThemeData(
+      style: MenuStyle(
+        backgroundColor: MaterialStatePropertyAll(Color(0xFFFFFFFF)),
+        elevation: MaterialStatePropertyAll(8),
+        shape: MaterialStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     ),
-    switchTheme: switchTheme(),
-    radioTheme: radioTheme(),
-    checkboxTheme: checkboxTheme,
-    listTileTheme: listTileTheme,
-    menuBarTheme: MenuBarThemeData(
-        style:
-            MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
     colorScheme: ColorScheme.light(
-        primary: Colors.blue, secondary: accent, background: grayBg),
+      primary: accent,
+      secondary: accent,
+      surface: Color(0xFFFFFFFF),
+      background: Color(0xFFF2F2F7),
+      error: Color(0xFFFF3B30),  // Apple Red
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: Color(0xFF000000),
+      onBackground: Color(0xFF000000),
+      onError: Colors.white,
+    ),
     popupMenuTheme: PopupMenuThemeData(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-              color: (isDesktop || isWebDesktop)
-                  ? Color(0xFFECECEC)
-                  : Colors.transparent),
-          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-        )),
+      color: Color(0xFFFFFFFF),
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+    ),
+    iconTheme: IconThemeData(
+      color: Color(0xFF8E8E93),
+      size: 24,
+    ),
   ).copyWith(
     extensions: <ThemeExtension<dynamic>>[
       ColorThemeExtension.light,
@@ -471,106 +547,173 @@ class MyTheme {
     ],
   );
   static ThemeData darkTheme = ThemeData(
+    // Apple 2026 Design System - Dark Theme (True Black for OLED)
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color.fromARGB(255, 45, 46, 53),
-    scaffoldBackgroundColor: Color(0xFF18191E),
-    dialogBackgroundColor: Color(0xFF18191E),
+    primaryColor: accent,
+    hoverColor: Color(0xFF2C2C2E),  // Apple Dark Secondary
+    scaffoldBackgroundColor: Color(0xFF000000),  // True black for OLED
+    dialogBackgroundColor: Color(0xFF1C1C1E),  // Apple Dark Surface
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
+      backgroundColor: Color(0xFF000000),
+      foregroundColor: Color(0xFFFFFFFF),
+      elevation: 0,
     ),
-    dialogTheme: DialogTheme(
-      elevation: 15,
+    dialogTheme: DialogThemeData(
+      elevation: 24,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.0),
-        side: BorderSide(
-          width: 1,
-          color: Color(0xFF24252B),
-        ),
+        borderRadius: BorderRadius.circular(20.0),  // Apple XLarge radius
       ),
+      backgroundColor: Color(0xFF1C1C1E),
     ),
     scrollbarTheme: scrollbarThemeDark,
-    inputDecorationTheme: (isDesktop || isWebDesktop)
-        ? InputDecorationTheme(
-            fillColor: Color(0xFF24252B),
-            filled: true,
-            isDense: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          )
-        : null,
-    textTheme: const TextTheme(
-      titleLarge: TextStyle(fontSize: 19),
-      titleSmall: TextStyle(fontSize: 14),
-      bodySmall: TextStyle(fontSize: 12, height: 1.25),
-      bodyMedium: TextStyle(fontSize: 14, height: 1.25),
-      labelLarge: TextStyle(
-        fontSize: 16.0,
-        fontWeight: FontWeight.bold,
-        color: accent80,
+    inputDecorationTheme: InputDecorationTheme(
+      fillColor: Color(0xFF1C1C1E),  // Apple Dark Surface
+      filled: true,
+      isDense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Color(0xFF38383A)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Color(0xFF38383A)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: accent, width: 2),
       ),
     ),
-    cardColor: Color(0xFF24252B),
+    textTheme: TextTheme(
+      titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFFFFFFFF), letterSpacing: -0.4),
+      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFFFFFFFF)),
+      titleSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFFFFFFFF)),
+      bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, color: Color(0xFFFFFFFF), height: 1.5),
+      bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color(0xFFFFFFFF), height: 1.5),
+      bodySmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: Color(0xFF8E8E93), height: 1.4),
+      labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: accent),
+      labelMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF8E8E93)),
+      labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: Color(0xFF8E8E93)),
+    ),
+    cardColor: Color(0xFF1C1C1E),  // Apple Dark Surface
+    cardTheme: CardThemeData(
+      color: Color(0xFF1C1C1E),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Color(0xFF38383A), width: 0.5),
+      ),
+    ),
+    hintColor: Color(0xFF8E8E93),
     visualDensity: VisualDensity.adaptivePlatformDensity,
-    tabBarTheme: const TabBarTheme(
-      labelColor: Colors.white70,
+    tabBarTheme: TabBarThemeData(
+      labelColor: accent,
+      unselectedLabelColor: Color(0xFF8E8E93),
+      indicatorColor: accent,
     ),
     tooltipTheme: tooltipTheme(),
     splashColor: (isDesktop || isWebDesktop) ? Colors.transparent : null,
     highlightColor: (isDesktop || isWebDesktop) ? Colors.transparent : null,
     splashFactory: (isDesktop || isWebDesktop) ? NoSplash.splashFactory : null,
-    textButtonTheme: (isDesktop || isWebDesktop)
-        ? TextButtonThemeData(
-            style: TextButton.styleFrom(
-              splashFactory: NoSplash.splashFactory,
-              disabledForegroundColor: Colors.white70,
-              foregroundColor: Colors.white70,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18.0),
-              ),
-            ),
-          )
-        : mobileTextButtonTheme,
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: accent,
+        splashFactory: (isDesktop || isWebDesktop) ? NoSplash.splashFactory : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MyTheme.accent,
+        backgroundColor: accent,
         foregroundColor: Colors.white,
-        disabledForegroundColor: Colors.white70,
-        disabledBackgroundColor: Colors.white10,
+        disabledForegroundColor: Colors.white38,
+        disabledBackgroundColor: Color(0xFF38383A),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(12.0),
         ),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(0xFF24252B),
-        side: BorderSide(color: Colors.white12, width: 0.5),
-        disabledForegroundColor: Colors.white70,
-        foregroundColor: Colors.white70,
+        foregroundColor: accent,
+        side: BorderSide(color: accent, width: 1.5),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return Colors.white;
+        return Color(0xFFFFFFFF);
+      }),
+      trackColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return Color(0xFF34C759);  // Apple Green
+        return Color(0xFF38383A);
+      }),
+      splashRadius: 0,
+    ),
+    radioTheme: radioTheme(),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) return accent;
+        return Colors.transparent;
+      }),
+      checkColor: MaterialStateProperty.all(Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      side: BorderSide(color: Color(0xFF48484A), width: 1.5),
+      splashRadius: 0,
+    ),
+    listTileTheme: listTileTheme,
+    dividerColor: Color(0xFF38383A),
+    dividerTheme: DividerThemeData(
+      color: Color(0xFF38383A),
+      thickness: 0.5,
+      indent: 16,
+    ),
+    menuBarTheme: MenuBarThemeData(
+      style: MenuStyle(
+        backgroundColor: MaterialStatePropertyAll(Color(0xFF1C1C1E)),
+        elevation: MaterialStatePropertyAll(8),
+        shape: MaterialStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     ),
-    switchTheme: switchTheme(),
-    radioTheme: radioTheme(),
-    checkboxTheme: checkboxTheme,
-    listTileTheme: listTileTheme,
-    menuBarTheme: MenuBarThemeData(
-        style: MenuStyle(
-            backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
     colorScheme: ColorScheme.dark(
-      primary: Colors.blue,
+      primary: accent,
       secondary: accent,
-      background: Color(0xFF24252B),
+      surface: Color(0xFF1C1C1E),
+      background: Color(0xFF000000),
+      error: Color(0xFFFF3B30),  // Apple Red
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: Color(0xFFFFFFFF),
+      onBackground: Color(0xFFFFFFFF),
+      onError: Colors.white,
     ),
     popupMenuTheme: PopupMenuThemeData(
-        shape: RoundedRectangleBorder(
-      side: BorderSide(color: Colors.white24),
-      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-    )),
+      color: Color(0xFF1C1C1E),
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: BorderSide(color: Color(0xFF38383A), width: 0.5),
+      ),
+    ),
+    iconTheme: IconThemeData(
+      color: Color(0xFF8E8E93),
+      size: 24,
+    ),
   ).copyWith(
     extensions: <ThemeExtension<dynamic>>[
       ColorThemeExtension.dark,

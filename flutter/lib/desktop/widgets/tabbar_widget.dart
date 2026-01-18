@@ -13,6 +13,8 @@ import 'package:flutter_hbb/desktop/pages/view_camera_page.dart';
 import 'package:flutter_hbb/main.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
+import 'package:flutter_hbb/design_system/apple_theme.dart';
+import 'package:flutter_hbb/design_system/apple_typography.dart';
 import 'package:get/get.dart';
 import 'package:get/get_rx/src/rx_workers/utils/debouncer.dart';
 import 'package:scroll_pos/scroll_pos.dart';
@@ -25,6 +27,7 @@ const double _kTabBarHeight = kDesktopRemoteTabBarHeight;
 const double _kIconSize = 18;
 const double _kDividerIndent = 10;
 const double _kActionIconSize = 12;
+const double _kSidebarWidth = 240.0; // Apple design system sidebar width
 
 class TabInfo {
   final String key; // Notice: cm use client_id.toString() as key
@@ -640,7 +643,7 @@ class _DesktopTabState extends State<DesktopTab>
                         Offstage(
                             offstage: !showTitle,
                             child: const Text(
-                              "RustDesk",
+                              "PixPos Remote",
                               style: TextStyle(fontSize: 13),
                             ).marginOnly(left: 2))
                       ]).marginOnly(
@@ -1073,12 +1076,16 @@ class _TabState extends State<_Tab> with RestorationMixin {
 
     final icon = Offstage(
         offstage: !showIcon,
-        child: Icon(
-          isSelected ? widget.selectedIcon : widget.unselectedIcon,
-          size: _kIconSize,
-          color: isSelected
-              ? MyTheme.tabbar(context).selectedTabIconColor
-              : MyTheme.tabbar(context).unSelectedTabIconColor,
+        child: AnimatedSwitcher(
+          duration: AppleTheme.durationFast,
+          child: Icon(
+            isSelected ? widget.selectedIcon : widget.unselectedIcon,
+            key: ValueKey(isSelected),
+            size: _kIconSize,
+            color: isSelected
+                ? MyTheme.tabbar(context).selectedTabIconColor
+                : MyTheme.tabbar(context).unSelectedTabIconColor,
+          ),
         ).paddingOnly(right: 5));
     final labelWidget = Obx(() {
       return ConstrainedBox(
@@ -1086,16 +1093,23 @@ class _TabState extends State<_Tab> with RestorationMixin {
           child: Tooltip(
             message:
                 widget.tabType == DesktopTabType.main ? '' : widget.label.value,
-            child: Text(
-              widget.tabType == DesktopTabType.main
-                  ? translate(widget.label.value)
-                  : widget.label.value,
-              textAlign: TextAlign.center,
+            child: AnimatedDefaultTextStyle(
+              duration: AppleTheme.durationNormal,
               style: TextStyle(
-                  color: isSelected
-                      ? MyTheme.tabbar(context).selectedTextColor
-                      : MyTheme.tabbar(context).unSelectedTextColor),
-              overflow: TextOverflow.ellipsis,
+                fontFamily: AppleTypography.fontFamily,
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected
+                    ? MyTheme.tabbar(context).selectedTextColor
+                    : MyTheme.tabbar(context).unSelectedTextColor,
+              ),
+              child: Text(
+                widget.tabType == DesktopTabType.main
+                    ? translate(widget.label.value)
+                    : widget.label.value,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ));
     });
@@ -1145,6 +1159,8 @@ class _TabState extends State<_Tab> with RestorationMixin {
     bool showDivider =
         widget.index != widget.selected - 1 && widget.index != widget.selected;
     RxBool hover = restoreHover.value.obs;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Ink(
       child: InkWell(
         onHover: (value) {
@@ -1152,50 +1168,53 @@ class _TabState extends State<_Tab> with RestorationMixin {
           restoreHover.value = value;
         },
         onTap: () => widget.onTap(),
-        child: Container(
-            decoration: isSelected && widget.selectedBorderColor != null
-                ? BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: widget.selectedBorderColor!,
-                        width: 1,
-                      ),
+        borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
+        hoverColor: MyTheme.tabbar(context).hoverColor,
+        child: AnimatedContainer(
+          duration: AppleTheme.durationNormal,
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
+            color: isSelected
+                ? widget.selectedTabBackgroundColor
+                : widget.unSelectedTabBackgroundColor,
+            border: isSelected && widget.selectedBorderColor != null
+                ? Border(
+                    bottom: BorderSide(
+                      color: widget.selectedBorderColor!,
+                      width: 2,
                     ),
                   )
                 : null,
-            child: Container(
-              color: isSelected
-                  ? widget.selectedTabBackgroundColor
-                  : widget.unSelectedTabBackgroundColor,
-              child: Row(
-                children: [
-                  SizedBox(
-                      // _kTabBarHeight also displays normally
-                      height: _showTabBarBottomDivider(widget.tabType)
-                          ? _kTabBarHeight - 1
-                          : _kTabBarHeight,
-                      child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _buildTabContent(),
-                            Obx((() => _CloseButton(
-                                  visible: hover.value && widget.closable,
-                                  tabSelected: isSelected,
-                                  onClose: () => widget.onClose(),
-                                )))
-                          ])).paddingOnly(left: 10, right: 5),
-                  Offstage(
-                    offstage: !showDivider,
-                    child: VerticalDivider(
-                      width: 1,
-                      indent: _kDividerIndent,
-                      endIndent: _kDividerIndent,
-                      color: MyTheme.tabbar(context).dividerColor,
-                    ),
-                  )
-                ],
-              ),
-            )),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                  height: _showTabBarBottomDivider(widget.tabType)
+                      ? _kTabBarHeight - 1
+                      : _kTabBarHeight,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildTabContent(),
+                        Obx((() => _CloseButton(
+                              visible: hover.value && widget.closable,
+                              tabSelected: isSelected,
+                              onClose: () => widget.onClose(),
+                            )))
+                      ])).paddingOnly(left: 10, right: 5),
+              Offstage(
+                offstage: !showDivider,
+                child: VerticalDivider(
+                  width: 1,
+                  indent: _kDividerIndent,
+                  endIndent: _kDividerIndent,
+                  color: MyTheme.tabbar(context).dividerColor,
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1223,27 +1242,28 @@ class _CloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-            width: _kIconSize,
-            child: () {
-              if (visible) {
-                return InkWell(
-                  hoverColor: MyTheme.tabbar(context).closeHoverColor,
-                  customBorder: const CircleBorder(),
-                  onTap: () => onClose(),
-                  child: Icon(
-                    Icons.close,
-                    size: _kIconSize,
-                    color: tabSelected
-                        ? MyTheme.tabbar(context).selectedIconColor
-                        : MyTheme.tabbar(context).unSelectedIconColor,
-                  ),
-                );
-              } else {
-                return Offstage();
-              }
-            }())
-        .paddingOnly(left: 10);
+    return AnimatedOpacity(
+      duration: AppleTheme.durationFast,
+      opacity: visible ? 1.0 : 0.0,
+      child: AnimatedContainer(
+        duration: AppleTheme.durationFast,
+        width: _kIconSize,
+        child: visible
+            ? InkWell(
+                hoverColor: MyTheme.tabbar(context).closeHoverColor,
+                customBorder: const CircleBorder(),
+                onTap: () => onClose(),
+                child: Icon(
+                  Icons.close,
+                  size: _kIconSize,
+                  color: tabSelected
+                      ? MyTheme.tabbar(context).selectedIconColor
+                      : MyTheme.tabbar(context).unSelectedIconColor,
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    ).paddingOnly(left: 10);
   }
 }
 
@@ -1278,32 +1298,40 @@ class _ActionIconState extends State<ActionIcon> {
   Widget build(BuildContext context) {
     return Tooltip(
       message: widget.message != null ? translate(widget.message!) : "",
-      waitDuration: const Duration(seconds: 1),
-      child: InkWell(
-        hoverColor: widget.isClose
-            ? const Color.fromARGB(255, 196, 43, 28)
-            : MyTheme.tabbar(context).hoverColor,
-        onHover: (value) => hover.value = value,
-        onTap: widget.onTap,
-        onTapDown: widget.onTapDown,
-        child: SizedBox(
-          height: widget.boxSize,
-          width: widget.boxSize,
-          child: widget.onTap == null
-              ? Icon(
-                  widget.icon,
-                  color: Colors.grey,
-                  size: widget.iconSize,
-                )
-              : Obx(
-                  () => Icon(
+      waitDuration: const Duration(milliseconds: 500), // Apple-style 500ms delay
+      child: AnimatedContainer(
+        duration: AppleTheme.durationFast,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
+          hoverColor: widget.isClose
+              ? AppleTheme.systemRed
+              : MyTheme.tabbar(context).hoverColor,
+          onHover: (value) => hover.value = value,
+          onTap: widget.onTap,
+          onTapDown: widget.onTapDown,
+          child: SizedBox(
+            height: widget.boxSize,
+            width: widget.boxSize,
+            child: widget.onTap == null
+                ? Icon(
                     widget.icon,
-                    color: hover.value && widget.isClose
-                        ? Colors.white
-                        : MyTheme.tabbar(context).unSelectedIconColor,
+                    color: AppleTheme.secondaryTextColor(context).withOpacity(0.5),
                     size: widget.iconSize,
+                  )
+                : Obx(
+                    () => AnimatedSwitcher(
+                      duration: AppleTheme.durationFast,
+                      child: Icon(
+                        widget.icon,
+                        key: ValueKey(hover.value),
+                        color: hover.value && widget.isClose
+                            ? Colors.white
+                            : MyTheme.tabbar(context).unSelectedIconColor,
+                        size: widget.iconSize,
+                      ),
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );
@@ -1454,29 +1482,31 @@ class TabbarTheme extends ThemeExtension<TabbarTheme> {
       required this.closeHoverColor,
       required this.selectedTabBackgroundColor});
 
+  // Apple Design System - Light Theme
   static const light = TabbarTheme(
-      selectedTabIconColor: MyTheme.accent,
-      unSelectedTabIconColor: Color.fromARGB(255, 162, 203, 241),
-      selectedTextColor: Colors.black,
-      unSelectedTextColor: Color.fromARGB(255, 112, 112, 112),
-      selectedIconColor: Color.fromARGB(255, 26, 26, 26),
-      unSelectedIconColor: Color.fromARGB(255, 96, 96, 96),
-      dividerColor: Color.fromARGB(255, 238, 238, 238),
-      hoverColor: Colors.white54,
-      closeHoverColor: Colors.white,
-      selectedTabBackgroundColor: Colors.white54);
+      selectedTabIconColor: AppleTheme.primaryBlue,
+      unSelectedTabIconColor: AppleTheme.lightSecondaryText,
+      selectedTextColor: AppleTheme.primaryBlue,
+      unSelectedTextColor: AppleTheme.lightSecondaryText,
+      selectedIconColor: AppleTheme.lightText,
+      unSelectedIconColor: AppleTheme.lightSecondaryText,
+      dividerColor: AppleTheme.lightSeparator,
+      hoverColor: Color(0x0A000000), // 4% black
+      closeHoverColor: AppleTheme.lightSecondary,
+      selectedTabBackgroundColor: Color(0x26007AFF)); // 15% Apple Blue
 
+  // Apple Design System - Dark Theme
   static const dark = TabbarTheme(
-      selectedTabIconColor: MyTheme.accent,
-      unSelectedTabIconColor: Color.fromARGB(255, 30, 65, 98),
-      selectedTextColor: Colors.white,
-      unSelectedTextColor: Color.fromARGB(255, 192, 192, 192),
-      selectedIconColor: Color.fromARGB(255, 192, 192, 192),
-      unSelectedIconColor: Color.fromARGB(255, 255, 255, 255),
-      dividerColor: Color.fromARGB(255, 64, 64, 64),
-      hoverColor: Colors.black26,
-      closeHoverColor: Colors.black,
-      selectedTabBackgroundColor: Colors.black26);
+      selectedTabIconColor: AppleTheme.primaryBlue,
+      unSelectedTabIconColor: AppleTheme.darkSecondaryText,
+      selectedTextColor: AppleTheme.primaryBlue,
+      unSelectedTextColor: AppleTheme.darkSecondaryText,
+      selectedIconColor: AppleTheme.darkText,
+      unSelectedIconColor: AppleTheme.darkSecondaryText,
+      dividerColor: AppleTheme.darkSeparator,
+      hoverColor: Color(0x0DFFFFFF), // 5% white
+      closeHoverColor: AppleTheme.darkSecondary,
+      selectedTabBackgroundColor: Color(0x26007AFF)); // 15% Apple Blue
 
   @override
   ThemeExtension<TabbarTheme> copyWith({

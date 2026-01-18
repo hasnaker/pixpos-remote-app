@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=PixPos Remote
+NoDisplay=true
+MimeType=x-scheme-handler/pixposremote;
+TryExec=pixpos-remote
+Exec=pixpos-remote %u
+Icon=pixpos-remote
+Terminal=false
+Type=Application
+StartupNotify=false
+StartupWMClass=pixpos-remote

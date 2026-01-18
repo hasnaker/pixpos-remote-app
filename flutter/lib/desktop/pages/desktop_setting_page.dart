@@ -12,6 +12,7 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
 import 'package:flutter_hbb/desktop/widgets/remote_toolbar.dart';
+import 'package:flutter_hbb/design_system/design_system.dart';
 import 'package:flutter_hbb/mobile/widgets/dialog.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/printer_model.dart';
@@ -27,18 +28,18 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
 
-const double _kTabWidth = 200;
+const double _kTabWidth = 240; // Updated to Apple sidebar width
 const double _kTabHeight = 42;
 const double _kCardFixedWidth = 540;
-const double _kCardLeftMargin = 15;
-const double _kContentHMargin = 15;
-const double _kContentHSubMargin = _kContentHMargin + 33;
-const double _kCheckBoxLeftMargin = 10;
-const double _kRadioLeftMargin = 10;
-const double _kListViewBottomMargin = 15;
+const double _kCardLeftMargin = 16; // Updated to Apple spacing
+const double _kContentHMargin = 16; // Updated to Apple spacing
+const double _kContentHSubMargin = _kContentHMargin + 32;
+const double _kCheckBoxLeftMargin = 12; // Updated to Apple spacing
+const double _kRadioLeftMargin = 12; // Updated to Apple spacing
+const double _kListViewBottomMargin = 16; // Updated to Apple spacing
 const double _kTitleFontSize = 20;
 const double _kContentFontSize = 15;
-const Color _accentColor = MyTheme.accent;
+const Color _accentColor = AppleTheme.primaryBlue; // Updated to Apple accent
 const String _kSettingPageControllerTag = 'settingPageController';
 const String _kSettingPageTabKeyTag = 'settingPageTabKey';
 
@@ -48,6 +49,7 @@ class _TabInfo {
   late final IconData unselected;
   late final IconData selected;
   _TabInfo(this.key, this.label, this.unselected, this.selected);
+
 }
 
 enum SettingsTabKey {
@@ -276,12 +278,23 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: isDark ? AppleTheme.darkBackground : AppleTheme.lightBackground,
       body: _buildBlock(
         children: <Widget>[
-          SizedBox(
+          Container(
             width: _kTabWidth,
+            decoration: BoxDecoration(
+              color: isDark ? AppleTheme.darkSurface : AppleTheme.lightSurface,
+              border: Border(
+                right: BorderSide(
+                  color: isDark ? AppleTheme.darkSeparator : AppleTheme.lightSeparator,
+                  width: 0.5,
+                ),
+              ),
+            ),
             child: Column(
               children: [
                 _header(context),
@@ -289,10 +302,9 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
               ],
             ),
           ),
-          const VerticalDivider(width: 1),
           Expanded(
             child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: isDark ? AppleTheme.darkBackground : AppleTheme.lightBackground,
               child: PageView(
                 controller: controller,
                 physics: NeverScrollableScrollPhysics(),
@@ -306,41 +318,37 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   }
 
   Widget _header(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final settingsText = Text(
       translate('Settings'),
       textAlign: TextAlign.left,
-      style: const TextStyle(
-        color: _accentColor,
-        fontSize: _kTitleFontSize,
-        fontWeight: FontWeight.w400,
+      style: AppleTypography.title2(context).copyWith(
+        color: AppleTheme.primaryBlue,
       ),
     );
-    return Row(
-      children: [
-        if (isWeb)
-          IconButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            icon: Icon(Icons.arrow_back),
-          ).marginOnly(left: 5),
-        if (isWeb)
-          SizedBox(
-            height: 62,
-            child: Align(
-              alignment: Alignment.center,
-              child: settingsText,
+    return Container(
+      height: 62,
+      padding: EdgeInsets.symmetric(horizontal: AppleTheme.spacing20),
+      child: Row(
+        children: [
+          if (isWeb)
+            IconButton(
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
+              icon: Icon(
+                Icons.arrow_back,
+                color: AppleTheme.primaryBlue,
+              ),
+              splashRadius: 20,
             ),
-          ).marginOnly(left: 20),
-        if (!isWeb)
-          SizedBox(
-            height: 62,
-            child: settingsText,
-          ).marginOnly(left: 20, top: 10),
-        const Spacer(),
-      ],
+          if (isWeb) SizedBox(width: AppleTheme.spacing8),
+          settingsText,
+          const Spacer(),
+        ],
+      ),
     );
   }
 
@@ -355,10 +363,11 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Widget _listItem({required _TabInfo tab}) {
     return Obx(() {
       bool selected = tab.key == selectedTab.value;
-      return SizedBox(
-        width: _kTabWidth,
-        height: _kTabHeight,
-        child: InkWell(
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
           onTap: () {
             if (selectedTab.value != tab.key) {
               int index = DesktopSettingPage.tabKeys.indexOf(tab.key);
@@ -369,25 +378,55 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
             }
             selectedTab.value = tab.key;
           },
-          child: Row(children: [
-            Container(
-              width: 4,
-              height: _kTabHeight * 0.7,
-              color: selected ? _accentColor : null,
+          child: AnimatedContainer(
+            duration: AppleTheme.durationFast,
+            height: _kTabHeight,
+            margin: EdgeInsets.symmetric(
+              horizontal: AppleTheme.spacing8,
+              vertical: AppleTheme.spacing2,
             ),
-            Icon(
-              selected ? tab.selected : tab.unselected,
-              color: selected ? _accentColor : null,
-              size: 20,
-            ).marginOnly(left: 13, right: 10),
-            Text(
-              translate(tab.label),
-              style: TextStyle(
-                  color: selected ? _accentColor : null,
-                  fontWeight: FontWeight.w400,
-                  fontSize: _kContentFontSize),
+            padding: EdgeInsets.symmetric(horizontal: AppleTheme.spacing12),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppleTheme.primaryBlue.withOpacity(0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppleTheme.radiusSmall),
             ),
-          ]),
+            child: Row(
+              children: [
+                // Selection indicator
+                AnimatedContainer(
+                  duration: AppleTheme.durationFast,
+                  width: 3,
+                  height: 24,
+                  margin: EdgeInsets.only(right: AppleTheme.spacing8),
+                  decoration: BoxDecoration(
+                    color: selected ? AppleTheme.primaryBlue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Icon(
+                  selected ? tab.selected : tab.unselected,
+                  color: selected 
+                      ? AppleTheme.primaryBlue 
+                      : (isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText),
+                  size: 20,
+                ),
+                SizedBox(width: AppleTheme.spacing10),
+                Expanded(
+                  child: Text(
+                    translate(tab.label),
+                    style: AppleTypography.subheadline(context).copyWith(
+                      color: selected 
+                          ? AppleTheme.primaryBlue 
+                          : (isDark ? AppleTheme.darkText : AppleTheme.lightText),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });
@@ -2379,35 +2418,68 @@ Widget _Card(
     {required String title,
     required List<Widget> children,
     List<Widget>? title_suffix}) {
-  return Row(
-    children: [
-      Flexible(
-        child: SizedBox(
-          width: _kCardFixedWidth,
-          child: Card(
-            child: Column(
-              children: [
-                Row(
+  return Builder(
+    builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      
+      return Row(
+        children: [
+          Flexible(
+            child: Container(
+              width: _kCardFixedWidth,
+              margin: EdgeInsets.only(
+                left: _kCardLeftMargin,
+                top: AppleTheme.spacing16,
+              ),
+              child: AppleCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                        child: Text(
-                      translate(title),
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        fontSize: _kTitleFontSize,
+                    // Title row
+                    Padding(
+                      padding: EdgeInsets.only(
+                        left: AppleTheme.spacing16,
+                        right: AppleTheme.spacing16,
+                        top: AppleTheme.spacing12,
+                        bottom: AppleTheme.spacing12,
                       ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              translate(title),
+                              textAlign: TextAlign.start,
+                              style: AppleTypography.title3(context),
+                            ),
+                          ),
+                          ...?title_suffix
+                        ],
+                      ),
+                    ),
+                    // Divider
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: isDark ? AppleTheme.darkSeparator : AppleTheme.lightSeparator,
+                    ),
+                    // Children with spacing
+                    ...children.map((e) => Padding(
+                      padding: EdgeInsets.only(
+                        top: AppleTheme.spacing4,
+                        right: _kContentHMargin,
+                      ),
+                      child: e,
                     )),
-                    ...?title_suffix
+                    SizedBox(height: AppleTheme.spacing12),
                   ],
-                ).marginOnly(left: _kContentHMargin, top: 10, bottom: 10),
-                ...children
-                    .map((e) => e.marginOnly(top: 4, right: _kContentHMargin)),
-              ],
-            ).marginOnly(bottom: 10),
-          ).marginOnly(left: _kCardLeftMargin, top: 15),
-        ),
-      ),
-    ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 
@@ -2455,31 +2527,74 @@ Widget _OptionCheckBox(
     enabled = false;
   }
 
-  return GestureDetector(
-    child: Obx(
-      () => Row(
-        children: [
-          Checkbox(
-                  value: ref.value,
-                  onChanged: enabled && !isOptFixed ? onChanged : null)
-              .marginOnly(right: 5),
-          Offstage(
-            offstage: !ref.value || checkedIcon == null,
-            child: checkedIcon?.marginOnly(right: 5),
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final effectiveEnabled = enabled && !isOptFixed;
+  
+  return MouseRegion(
+    cursor: effectiveEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+    child: GestureDetector(
+      onTap: effectiveEnabled
+          ? () {
+              onChanged(!ref.value);
+            }
+          : null,
+      child: Obx(
+        () => Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppleTheme.spacing12,
+            vertical: AppleTheme.spacing8,
           ),
-          Expanded(
-              child: Text(
-            translate(label),
-            style: TextStyle(color: disabledTextColor(context, enabled)),
-          ))
-        ],
+          child: Opacity(
+            opacity: effectiveEnabled ? 1.0 : AppleTheme.opacityDisabled,
+            child: Row(
+              children: [
+                // Apple-style checkbox
+                AnimatedContainer(
+                  duration: AppleTheme.durationFast,
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: ref.value ? AppleTheme.primaryBlue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: ref.value 
+                          ? AppleTheme.primaryBlue 
+                          : (isDark ? AppleTheme.darkTertiary : AppleTheme.lightTertiary),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: ref.value
+                      ? Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 14,
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppleTheme.spacing8),
+                Offstage(
+                  offstage: !ref.value || checkedIcon == null,
+                  child: checkedIcon != null 
+                      ? Padding(
+                          padding: EdgeInsets.only(right: AppleTheme.spacing4),
+                          child: checkedIcon,
+                        )
+                      : null,
+                ),
+                Expanded(
+                  child: Text(
+                    translate(label),
+                    style: AppleTypography.subheadline(context).copyWith(
+                      color: isDark ? AppleTheme.darkText : AppleTheme.lightText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-    ).marginOnly(left: _kCheckBoxLeftMargin),
-    onTap: enabled && !isOptFixed
-        ? () {
-            onChanged(!ref.value);
-          }
-        : null,
+    ),
   );
 }
 
@@ -2497,21 +2612,76 @@ Widget _Radio<T>(BuildContext context,
           }
         }
       : null;
-  return GestureDetector(
-    child: Row(
-      children: [
-        Radio<T>(value: value, groupValue: groupValue, onChanged: onChange2),
-        Expanded(
-          child: Text(translate(label),
-                  overflow: autoNewLine ? null : TextOverflow.ellipsis,
-                  style: TextStyle(
-                      fontSize: _kContentFontSize,
-                      color: disabledTextColor(context, onChange2 != null)))
-              .marginOnly(left: 5),
+  
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final isSelected = value == groupValue;
+  final effectiveEnabled = onChange2 != null;
+  
+  return MouseRegion(
+    cursor: effectiveEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+    child: GestureDetector(
+      onTap: () => onChange2?.call(value),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppleTheme.spacing12,
+          vertical: AppleTheme.spacing8,
         ),
-      ],
-    ).marginOnly(left: _kRadioLeftMargin),
-    onTap: () => onChange2?.call(value),
+        child: Opacity(
+          opacity: effectiveEnabled ? 1.0 : AppleTheme.opacityDisabled,
+          child: Row(
+            mainAxisSize: autoNewLine ? MainAxisSize.max : MainAxisSize.min,
+            children: [
+              // Apple-style radio button
+              AnimatedContainer(
+                duration: AppleTheme.durationFast,
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppleTheme.primaryBlue : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected 
+                        ? AppleTheme.primaryBlue 
+                        : (isDark ? AppleTheme.darkTertiary : AppleTheme.lightTertiary),
+                    width: 1.5,
+                  ),
+                ),
+                child: isSelected
+                    ? Center(
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(width: AppleTheme.spacing8),
+              autoNewLine
+                  ? Expanded(
+                      child: Text(
+                        translate(label),
+                        overflow: autoNewLine ? null : TextOverflow.ellipsis,
+                        style: AppleTypography.subheadline(context).copyWith(
+                          color: isDark ? AppleTheme.darkText : AppleTheme.lightText,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      translate(label),
+                      overflow: autoNewLine ? null : TextOverflow.ellipsis,
+                      style: AppleTypography.subheadline(context).copyWith(
+                        color: isDark ? AppleTheme.darkText : AppleTheme.lightText,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -2583,53 +2753,178 @@ class _WaylandCardState extends State<WaylandCard> {
 // ignore: non_constant_identifier_names
 Widget _Button(String label, Function() onPressed,
     {bool enabled = true, String? tip, ButtonStyle? style}) {
-  var button = ElevatedButton(
-    onPressed: enabled ? onPressed : null,
-    child: Text(
-      translate(label),
-    ).marginSymmetric(horizontal: 15),
-    style: style,
+  return Builder(
+    builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isDestructive = style?.backgroundColor?.resolve({}) == 
+          Theme.of(context).colorScheme.error.withOpacity(0.75);
+      
+      Widget button = _AppleStyledButton(
+        text: translate(label),
+        onPressed: enabled ? onPressed : null,
+        destructive: isDestructive,
+      );
+      
+      if (tip != null) {
+        button = Tooltip(
+          message: translate(tip),
+          waitDuration: Duration(milliseconds: 500),
+          child: button,
+        );
+      }
+      
+      return Row(children: [
+        button,
+      ]).marginOnly(left: _kContentHMargin);
+    },
   );
-  StatefulWidget child;
-  if (tip == null) {
-    child = button;
-  } else {
-    child = Tooltip(message: translate(tip), child: button);
+}
+
+class _AppleStyledButton extends StatefulWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool destructive;
+
+  const _AppleStyledButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+    this.destructive = false,
+  }) : super(key: key);
+
+  @override
+  State<_AppleStyledButton> createState() => _AppleStyledButtonState();
+}
+
+class _AppleStyledButtonState extends State<_AppleStyledButton> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveEnabled = widget.onPressed != null;
+    final backgroundColor = widget.destructive
+        ? AppleTheme.systemRed
+        : AppleTheme.primaryBlue;
+    
+    return MouseRegion(
+      onEnter: effectiveEnabled ? (_) => setState(() => _isHovered = true) : null,
+      onExit: effectiveEnabled ? (_) => setState(() => _isHovered = false) : null,
+      cursor: effectiveEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        onTapDown: effectiveEnabled ? (_) => setState(() => _isPressed = true) : null,
+        onTapUp: effectiveEnabled ? (_) => setState(() => _isPressed = false) : null,
+        onTapCancel: effectiveEnabled ? () => setState(() => _isPressed = false) : null,
+        child: AnimatedContainer(
+          duration: AppleTheme.durationFast,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppleTheme.spacing20,
+            vertical: AppleTheme.spacing10,
+          ),
+          decoration: BoxDecoration(
+            color: effectiveEnabled
+                ? (_isPressed
+                    ? backgroundColor.withOpacity(0.8)
+                    : (_isHovered
+                        ? backgroundColor.withOpacity(0.9)
+                        : backgroundColor))
+                : backgroundColor.withOpacity(AppleTheme.opacityDisabled),
+            borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+          ),
+          child: Text(
+            widget.text,
+            style: AppleTypography.buttonSmall(context).copyWith(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
   }
-  return Row(children: [
-    child,
-  ]).marginOnly(left: _kContentHMargin);
 }
 
 // ignore: non_constant_identifier_names
 Widget _SubButton(String label, Function() onPressed, [bool enabled = true]) {
-  return Row(
-    children: [
-      ElevatedButton(
-        onPressed: enabled ? onPressed : null,
+  return Builder(
+    builder: (context) {
+      return Row(
+        children: [
+          _AppleStyledSubButton(
+            text: translate(label),
+            onPressed: enabled ? onPressed : null,
+          ),
+        ],
+      ).marginOnly(left: _kContentHSubMargin);
+    },
+  );
+}
+
+class _AppleStyledSubButton extends StatefulWidget {
+  final String text;
+  final VoidCallback? onPressed;
+
+  const _AppleStyledSubButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+  }) : super(key: key);
+
+  @override
+  State<_AppleStyledSubButton> createState() => _AppleStyledSubButtonState();
+}
+
+class _AppleStyledSubButtonState extends State<_AppleStyledSubButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveEnabled = widget.onPressed != null;
+    
+    return MouseRegion(
+      onEnter: effectiveEnabled ? (_) => setState(() => _isHovered = true) : null,
+      onExit: effectiveEnabled ? (_) => setState(() => _isHovered = false) : null,
+      cursor: effectiveEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: widget.onPressed,
         child: Text(
-          translate(label),
-        ).marginSymmetric(horizontal: 15),
+          widget.text,
+          style: AppleTypography.subheadline(context).copyWith(
+            color: effectiveEnabled
+                ? (_isHovered
+                    ? AppleTheme.primaryBlue.withOpacity(0.8)
+                    : AppleTheme.primaryBlue)
+                : AppleTheme.primaryBlue.withOpacity(AppleTheme.opacityDisabled),
+          ),
+        ),
       ),
-    ],
-  ).marginOnly(left: _kContentHSubMargin);
+    );
+  }
 }
 
 // ignore: non_constant_identifier_names
 Widget _SubLabeledWidget(BuildContext context, String label, Widget child,
     {bool enabled = true}) {
-  return Row(
-    children: [
-      Text(
-        '${translate(label)}: ',
-        style: TextStyle(color: disabledTextColor(context, enabled)),
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  
+  return Opacity(
+    opacity: enabled ? 1.0 : AppleTheme.opacityDisabled,
+    child: Padding(
+      padding: EdgeInsets.only(left: _kContentHSubMargin),
+      child: Row(
+        children: [
+          Text(
+            '${translate(label)}: ',
+            style: AppleTypography.footnote(context).copyWith(
+              color: isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText,
+            ),
+          ),
+          SizedBox(width: AppleTheme.spacing12),
+          child,
+        ],
       ),
-      SizedBox(
-        width: 10,
-      ),
-      child,
-    ],
-  ).marginOnly(left: _kContentHSubMargin);
+    ),
+  );
 }
 
 Widget _lock(
@@ -2637,27 +2932,27 @@ Widget _lock(
   String label,
   Function() onUnlock,
 ) {
-  return Offstage(
-      offstage: !locked,
-      child: Row(
-        children: [
-          Flexible(
-            child: SizedBox(
-              width: _kCardFixedWidth,
-              child: Card(
-                child: ElevatedButton(
-                  child: SizedBox(
-                      height: 25,
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.security_sharp,
-                              size: 20,
-                            ),
-                            Text(translate(label)).marginOnly(left: 5),
-                          ]).marginSymmetric(vertical: 2)),
-                  onPressed: () async {
+  return Builder(
+    builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      
+      return Offstage(
+        offstage: !locked,
+        child: Row(
+          children: [
+            Flexible(
+              child: Container(
+                width: _kCardFixedWidth,
+                margin: EdgeInsets.only(
+                  left: _kCardLeftMargin,
+                  top: AppleTheme.spacing16,
+                ),
+                child: AppleCard(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppleTheme.spacing16,
+                    vertical: AppleTheme.spacing12,
+                  ),
+                  onTap: () async {
                     final unlockPin = bind.mainGetUnlockPin();
                     if (unlockPin.isEmpty || isUnlockPinDisabled()) {
                       bool checked = await callMainCheckSuperUserPermission();
@@ -2668,12 +2963,31 @@ Widget _lock(
                       checkUnlockPinDialog(unlockPin, onUnlock);
                     }
                   },
-                ).marginSymmetric(horizontal: 2, vertical: 4),
-              ).marginOnly(left: _kCardLeftMargin),
-            ).marginOnly(top: 10),
-          ),
-        ],
-      ));
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        color: AppleTheme.primaryBlue,
+                        size: 20,
+                      ),
+                      SizedBox(width: AppleTheme.spacing8),
+                      Text(
+                        translate(label),
+                        style: AppleTypography.body(context).copyWith(
+                          color: AppleTheme.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 _LabeledTextField(
@@ -2683,6 +2997,8 @@ _LabeledTextField(
     String errorText,
     bool enabled,
     bool secure) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  
   return Table(
     columnWidths: const {
       0: FixedColumnWidth(150),
@@ -2693,32 +3009,52 @@ _LabeledTextField(
       TableRow(
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 10),
+            padding: EdgeInsets.only(right: AppleTheme.spacing12),
             child: Text(
               '${translate(label)}:',
               textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 16,
-                color: disabledTextColor(context, enabled),
+              style: AppleTypography.subheadline(context).copyWith(
+                color: isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText,
               ),
             ),
           ),
-          TextField(
-            controller: controller,
-            enabled: enabled,
-            obscureText: secure,
-            autocorrect: false,
-            decoration: InputDecoration(
-              errorText: errorText.isNotEmpty ? errorText : null,
+          AnimatedContainer(
+            duration: AppleTheme.durationNormal,
+            decoration: BoxDecoration(
+              color: isDark ? AppleTheme.darkSecondary : AppleTheme.lightBackground,
+              borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+              border: Border.all(
+                color: errorText.isNotEmpty 
+                    ? AppleTheme.systemRed 
+                    : (isDark ? AppleTheme.darkTertiary : AppleTheme.lightSecondary),
+                width: errorText.isNotEmpty ? 2 : 1,
+              ),
             ),
-            style: TextStyle(
-              color: disabledTextColor(context, enabled),
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              obscureText: secure,
+              autocorrect: false,
+              style: AppleTypography.body(context).copyWith(
+                color: enabled 
+                    ? (isDark ? AppleTheme.darkText : AppleTheme.lightText)
+                    : (isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText),
+              ),
+              decoration: InputDecoration(
+                errorText: errorText.isNotEmpty ? errorText : null,
+                errorStyle: TextStyle(color: AppleTheme.systemRed),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppleTheme.spacing16,
+                  vertical: AppleTheme.spacing12,
+                ),
+                border: InputBorder.none,
+              ),
             ),
           ).workaroundFreezeLinuxMint(),
         ],
       ),
     ],
-  ).marginOnly(bottom: 8);
+  ).marginOnly(bottom: AppleTheme.spacing8);
 }
 
 class _CountDownButton extends StatefulWidget {
@@ -2738,6 +3074,7 @@ class _CountDownButton extends StatefulWidget {
 
 class _CountDownButtonState extends State<_CountDownButton> {
   bool _isButtonDisabled = false;
+  bool _isHovered = false;
 
   late int _countdownSeconds = widget.second;
 
@@ -2766,19 +3103,44 @@ class _CountDownButtonState extends State<_CountDownButton> {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: _isButtonDisabled
-          ? null
-          : () {
-              widget.onPressed?.call();
-              setState(() {
-                _isButtonDisabled = true;
-                _countdownSeconds = widget.second;
-              });
-              _startCountdownTimer();
-            },
-      child: Text(
-        _isButtonDisabled ? '$_countdownSeconds s' : translate(widget.text),
+    final effectiveEnabled = !_isButtonDisabled;
+    
+    return MouseRegion(
+      onEnter: effectiveEnabled ? (_) => setState(() => _isHovered = true) : null,
+      onExit: effectiveEnabled ? (_) => setState(() => _isHovered = false) : null,
+      cursor: effectiveEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: _isButtonDisabled
+            ? null
+            : () {
+                widget.onPressed?.call();
+                setState(() {
+                  _isButtonDisabled = true;
+                  _countdownSeconds = widget.second;
+                });
+                _startCountdownTimer();
+              },
+        child: AnimatedContainer(
+          duration: AppleTheme.durationFast,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppleTheme.spacing16,
+            vertical: AppleTheme.spacing8,
+          ),
+          decoration: BoxDecoration(
+            color: effectiveEnabled
+                ? (_isHovered
+                    ? AppleTheme.primaryBlue.withOpacity(0.9)
+                    : AppleTheme.primaryBlue)
+                : AppleTheme.primaryBlue.withOpacity(AppleTheme.opacityDisabled),
+            borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+          ),
+          child: Text(
+            _isButtonDisabled ? '$_countdownSeconds s' : translate(widget.text),
+            style: AppleTypography.buttonSmall(context).copyWith(
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
 import 'package:flutter_hbb/plugin/widgets/desc_ui.dart';
 import 'package:flutter_hbb/plugin/common.dart';
+import 'package:flutter_hbb/design_system/apple_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -113,36 +115,57 @@ class ToolbarState {
 }
 
 class _ToolbarTheme {
-  static const Color blueColor = MyTheme.button;
-  static const Color hoverBlueColor = MyTheme.accent;
-  static Color inactiveColor = Colors.grey[800]!;
-  static Color hoverInactiveColor = Colors.grey[850]!;
+  // Apple Design System Colors
+  static const Color blueColor = AppleTheme.primaryBlue;
+  static const Color hoverBlueColor = Color(0xFF0A84FF);
+  static Color inactiveColor = Colors.grey[700]!;
+  static Color hoverInactiveColor = Colors.grey[600]!;
 
-  static const Color redColor = Colors.redAccent;
-  static const Color hoverRedColor = Colors.red;
-  // kMinInteractiveDimension
+  static const Color redColor = AppleTheme.systemRed;
+  static const Color hoverRedColor = Color(0xFFFF453A);
+  
+  // Updated sizes per Apple design requirements
   static const double height = 20.0;
   static const double dividerHeight = 12.0;
 
+  // Icon size updated to 32px per requirement 14.3
   static const double buttonSize = 32;
-  static const double buttonHMargin = 2;
+  static const double buttonHMargin = 4;
   static const double buttonVMargin = 6;
-  static const double iconRadius = 8;
-  static const double elevation = 3;
+  static const double iconRadius = 10;
+  static const double elevation = 0; // Using glassmorphism instead
+
+  // Glassmorphism settings per requirement 14.1
+  static const double blurSigma = 20.0;
+  static const double glassOpacityLight = 0.85;
+  static const double glassOpacityDark = 0.4;
+  static const double toolbarBorderRadius = 16.0;
+
+  // Tooltip delay - 500ms per requirement 14.4
+  static const Duration tooltipWaitDuration = Duration(milliseconds: 500);
 
   static double dividerSpaceToAction = isWindows ? 8 : 14;
 
-  static double menuBorderRadius = isWindows ? 5.0 : 7.0;
+  static double menuBorderRadius = AppleTheme.radiusMedium;
   static EdgeInsets menuPadding = isWindows
       ? EdgeInsets.fromLTRB(4, 12, 4, 12)
       : EdgeInsets.fromLTRB(6, 14, 6, 14);
-  static const double menuButtonBorderRadius = 3.0;
+  static const double menuButtonBorderRadius = 8.0;
 
   static Color borderColor(BuildContext context) =>
-      MyTheme.color(context).border3 ?? MyTheme.border;
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.1)
+          : Colors.black.withOpacity(0.05);
 
   static Color? dividerColor(BuildContext context) =>
-      MyTheme.color(context).divider;
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.2)
+          : Colors.black.withOpacity(0.1);
+
+  static Color glassBackgroundColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.black.withOpacity(glassOpacityDark)
+          : Colors.white.withOpacity(glassOpacityLight);
 
   static MenuStyle defaultMenuStyle(BuildContext context) => MenuStyle(
         side: MaterialStateProperty.all(BorderSide(
@@ -153,12 +176,43 @@ class _ToolbarTheme {
             borderRadius:
                 BorderRadius.circular(_ToolbarTheme.menuBorderRadius))),
         padding: MaterialStateProperty.all(_ToolbarTheme.menuPadding),
+        backgroundColor: MaterialStatePropertyAll(
+          Theme.of(context).brightness == Brightness.dark
+              ? AppleTheme.darkSurface
+              : AppleTheme.lightSurface,
+        ),
       );
   static final defaultMenuButtonStyle = ButtonStyle(
     backgroundColor: MaterialStatePropertyAll(Colors.transparent),
     padding: MaterialStatePropertyAll(EdgeInsets.zero),
     overlayColor: MaterialStatePropertyAll(Colors.transparent),
   );
+
+  /// Wraps content with glassmorphism effect
+  static Widget glassWrapper(
+      BuildContext context, Widget child, BorderRadius borderRadius) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: Container(
+          decoration: BoxDecoration(
+            color: glassBackgroundColor(context),
+            borderRadius: borderRadius,
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.5),
+              width: 1,
+            ),
+            boxShadow: AppleTheme.shadow(context, elevated: true),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 
   static Widget borderWrapper(
       BuildContext context, Widget child, BorderRadius borderRadius) {
@@ -247,11 +301,18 @@ class RemoteToolbar extends StatefulWidget {
   State<RemoteToolbar> createState() => _RemoteToolbarState();
 }
 
-class _RemoteToolbarState extends State<RemoteToolbar> {
+class _RemoteToolbarState extends State<RemoteToolbar>
+    with SingleTickerProviderStateMixin {
   late Debouncer<int> _debouncerHide;
   bool _isCursorOverImage = false;
   final _fractionX = 0.5.obs;
   final _dragging = false.obs;
+  
+  // Animation controller for smooth collapse/expand per requirement 14.5
+  late AnimationController _collapseAnimationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   int get windowId => stateGlobal.windowId;
 
@@ -276,6 +337,36 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
   @override
   initState() {
     super.initState();
+    
+    // Initialize collapse animation controller
+    _collapseAnimationController = AnimationController(
+      duration: AppleTheme.durationMedium,
+      vsync: this,
+    );
+    
+    // Slide up animation for collapse
+    _slideAnimation = Tween<double>(begin: 0.0, end: -60.0).animate(
+      CurvedAnimation(
+        parent: _collapseAnimationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    
+    // Fade out animation
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _collapseAnimationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+    
+    // Scale down animation
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _collapseAnimationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _fractionX.value = double.tryParse(await bind.sessionGetOption(
@@ -311,6 +402,7 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
 
   @override
   dispose() {
+    _collapseAnimationController.dispose();
     super.dispose();
 
     widget.onEnterOrLeaveImageCleaner(identityHashCode(this));
@@ -327,48 +419,53 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       if (hide.value) {
         return const SizedBox.shrink();
       }
+      
+      // Trigger animation based on collapse state
+      if (collapse.value) {
+        _collapseAnimationController.forward();
+      } else {
+        _collapseAnimationController.reverse();
+      }
+      
       return Align(
         alignment: Alignment.topCenter,
-        child: collapse.isFalse
-            ? _buildToolbar(context)
-            : _buildDraggableCollapse(context),
+        child: _buildAnimatedToolbar(context),
       );
     });
   }
-
-  Widget _buildDraggableCollapse(BuildContext context) {
-    return Obx(() {
-      if (collapse.isFalse && _dragging.isFalse) {
-        triggerAutoHide();
-      }
-      final borderRadius = BorderRadius.vertical(
-        bottom: Radius.circular(5),
-      );
-      return Align(
-        alignment: FractionalOffset(_fractionX.value, 0),
-        child: Offstage(
-          offstage: _dragging.isTrue,
-          child: Material(
-            elevation: _ToolbarTheme.elevation,
-            shadowColor: MyTheme.color(context).shadow,
-            borderRadius: borderRadius,
-            child: _DraggableShowHide(
-              id: widget.id,
-              sessionId: widget.ffi.sessionId,
-              dragging: _dragging,
-              fractionX: _fractionX,
-              toolbarState: widget.state,
-              setFullscreen: _setFullscreen,
-              setMinimize: _minimize,
-              borderRadius: borderRadius,
-            ),
-          ),
+  
+  /// Builds the toolbar with smooth collapse/expand animations
+  /// per requirement 14.5
+  Widget _buildAnimatedToolbar(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Animated main toolbar
+        AnimatedBuilder(
+          animation: _collapseAnimationController,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, _slideAnimation.value),
+              child: Opacity(
+                opacity: _fadeAnimation.value.clamp(0.0, 1.0),
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: collapse.value && _collapseAnimationController.isCompleted
+                      ? const SizedBox.shrink()
+                      : _buildToolbarContent(context),
+                ),
+              ),
+            );
+          },
         ),
-      );
-    });
+        // Collapse handle - always visible
+        _buildDraggableCollapse(context),
+      ],
+    );
   }
-
-  Widget _buildToolbar(BuildContext context) {
+  
+  /// Builds the main toolbar content
+  Widget _buildToolbarContent(BuildContext context) {
     final List<Widget> toolbarItems = [];
     toolbarItems.add(_PinMenu(state: widget.state));
     if (!isWebDesktop) {
@@ -405,39 +502,56 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
     }
     if (!isWeb) toolbarItems.add(_RecordMenu());
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
-    final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Material(
-          elevation: _ToolbarTheme.elevation,
-          shadowColor: MyTheme.color(context).shadow,
-          borderRadius: toolbarBorderRadius,
-          color: Theme.of(context)
-              .menuBarTheme
-              .style
-              ?.backgroundColor
-              ?.resolve(MaterialState.values.toSet()),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Theme(
-              data: themeData(),
-              child: _ToolbarTheme.borderWrapper(
-                  context,
-                  Row(
-                    children: [
-                      SizedBox(width: _ToolbarTheme.buttonHMargin * 2),
-                      ...toolbarItems,
-                      SizedBox(width: _ToolbarTheme.buttonHMargin * 2)
-                    ],
-                  ),
-                  toolbarBorderRadius),
+    final toolbarBorderRadius = BorderRadius.all(Radius.circular(_ToolbarTheme.toolbarBorderRadius));
+    
+    // Apply glassmorphism effect per requirement 14.1
+    return _ToolbarTheme.glassWrapper(
+      context,
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Theme(
+          data: themeData(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: _ToolbarTheme.buttonHMargin * 2,
+              vertical: _ToolbarTheme.buttonVMargin,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: toolbarItems,
             ),
           ),
         ),
-        _buildDraggableCollapse(context),
-      ],
+      ),
+      toolbarBorderRadius,
     );
+  }
+
+  Widget _buildDraggableCollapse(BuildContext context) {
+    return Obx(() {
+      if (collapse.isFalse && _dragging.isFalse) {
+        triggerAutoHide();
+      }
+      final borderRadius = BorderRadius.vertical(
+        bottom: Radius.circular(AppleTheme.radiusSmall),
+      );
+      return Align(
+        alignment: FractionalOffset(_fractionX.value, 0),
+        child: Offstage(
+          offstage: _dragging.isTrue,
+          child: _DraggableShowHide(
+            id: widget.id,
+            sessionId: widget.ffi.sessionId,
+            dragging: _dragging,
+            fractionX: _fractionX,
+            toolbarState: widget.state,
+            setFullscreen: _setFullscreen,
+            setMinimize: _minimize,
+            borderRadius: borderRadius,
+          ),
+        ),
+      );
+    });
   }
 
   ThemeData themeData() {
@@ -2280,6 +2394,8 @@ class _IconMenuButtonState extends State<_IconMenuButton> {
           onPressed: widget.onPressed,
           child: Tooltip(
             message: translate(widget.tooltip),
+            // 500ms delay per requirement 14.4
+            waitDuration: _ToolbarTheme.tooltipWaitDuration,
             child: Material(
                 type: MaterialType.transparency,
                 child: Ink(
@@ -2295,6 +2411,8 @@ class _IconMenuButtonState extends State<_IconMenuButton> {
         vertical: widget.vMargin ?? _ToolbarTheme.buttonVMargin);
     button = Tooltip(
       message: widget.tooltip,
+      // 500ms delay per requirement 14.4
+      waitDuration: _ToolbarTheme.tooltipWaitDuration,
       child: button,
     );
     if (widget.topLevel) {
@@ -2363,6 +2481,8 @@ class _IconSubmenuButtonState extends State<_IconSubmenuButton> {
                 }),
             child: Tooltip(
                 message: translate(widget.tooltip),
+                // 500ms delay per requirement 14.4
+                waitDuration: _ToolbarTheme.tooltipWaitDuration,
                 child: Material(
                     type: MaterialType.transparency,
                     child: Ink(
@@ -2637,6 +2757,8 @@ class _DraggableShowHideState extends State<_DraggableShowHide> {
               Tooltip(
                 message: translate(
                     isFullscreen.isTrue ? 'Exit Fullscreen' : 'Fullscreen'),
+                // 500ms delay per requirement 14.4
+                waitDuration: _ToolbarTheme.tooltipWaitDuration,
                 child: Icon(
                   isFullscreen.isTrue
                       ? Icons.fullscreen_exit
@@ -2652,6 +2774,8 @@ class _DraggableShowHideState extends State<_DraggableShowHide> {
                   widget.setMinimize,
                   Tooltip(
                     message: translate('Minimize'),
+                    // 500ms delay per requirement 14.4
+                    waitDuration: _ToolbarTheme.tooltipWaitDuration,
                     child: Icon(
                       Icons.remove,
                       size: iconSize,
@@ -2666,6 +2790,8 @@ class _DraggableShowHideState extends State<_DraggableShowHide> {
           Obx((() => Tooltip(
                 message: translate(
                     collapse.isFalse ? 'Hide Toolbar' : 'Show Toolbar'),
+                // 500ms delay per requirement 14.4
+                waitDuration: _ToolbarTheme.tooltipWaitDuration,
                 child: Icon(
                   collapse.isFalse ? Icons.expand_less : Icons.expand_more,
                   size: iconSize,
@@ -2681,6 +2807,8 @@ class _DraggableShowHideState extends State<_DraggableShowHide> {
                 () => closeConnection(id: widget.id),
                 Tooltip(
                   message: translate('Close'),
+                  // 500ms delay per requirement 14.4
+                  waitDuration: _ToolbarTheme.tooltipWaitDuration,
                   child: Icon(
                     Icons.close,
                     size: iconSize,
@@ -2693,24 +2821,33 @@ class _DraggableShowHideState extends State<_DraggableShowHide> {
           })
       ],
     );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextButtonTheme(
       data: TextButtonThemeData(style: buttonStyle),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context)
-              .menuBarTheme
-              .style
-              ?.backgroundColor
-              ?.resolve(MaterialState.values.toSet()),
-          border: Border.all(
-            color: _ToolbarTheme.borderColor(context),
-            width: 1,
+      // Apply glassmorphism effect per requirement 14.1
+      child: ClipRRect(
+        borderRadius: widget.borderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: _ToolbarTheme.blurSigma,
+            sigmaY: _ToolbarTheme.blurSigma,
           ),
-          borderRadius: widget.borderRadius,
-        ),
-        child: SizedBox(
-          height: 20,
-          child: child,
+          child: Container(
+            decoration: BoxDecoration(
+              color: _ToolbarTheme.glassBackgroundColor(context),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              borderRadius: widget.borderRadius,
+            ),
+            child: SizedBox(
+              height: 24,
+              child: child,
+            ),
+          ),
         ),
       ),
     );

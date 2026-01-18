@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/formatter/id_formatter.dart';
 import 'package:flutter_hbb/common/widgets/connection_page_title.dart';
 import 'package:flutter_hbb/models/state_model.dart';
+import 'package:flutter_hbb/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -148,20 +149,23 @@ class _ConnectionPageState extends State<ConnectionPage> {
   /// UI for the remote ID TextField.
   /// Search for a peer and connect to it if the id exists.
   Widget _buildRemoteIDTextField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     final w = SizedBox(
       height: 84,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-        child: Ink(
+        padding: EdgeInsets.symmetric(vertical: AppleTheme.spacing8, horizontal: AppleTheme.spacing4),
+        child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.all(Radius.circular(13)),
+            color: isDark ? AppleTheme.darkSurface : AppleTheme.lightSurface,
+            borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+            boxShadow: isDark ? AppleTheme.shadowDark : AppleTheme.shadowLight,
           ),
           child: Row(
             children: <Widget>[
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.only(left: 16, right: 16),
+                  padding: EdgeInsets.symmetric(horizontal: AppleTheme.spacing16),
                   child: RawAutocomplete<Peer>(
                     optionsBuilder: (TextEditingValue textEditingValue) {
                       if (textEditingValue.text == '') {
@@ -225,30 +229,29 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         autocorrect: false,
                         enableSuggestions: false,
                         keyboardType: TextInputType.visiblePassword,
-                        // keyboardType: TextInputType.number,
                         onChanged: (String text) {
                           _idController.id = text;
                         },
-                        style: const TextStyle(
-                          fontFamily: 'WorkSans',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                          color: MyTheme.idColor,
+                        style: TextStyle(
+                          fontFamily: 'JetBrains Mono',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 24,
+                          letterSpacing: 1.5,
+                          color: AppleTheme.primaryBlue,
                         ),
                         decoration: InputDecoration(
                           labelText: translate('Remote ID'),
-                          // hintText: 'Enter your remote ID',
                           border: InputBorder.none,
-                          helperStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: MyTheme.darkGray,
+                          helperStyle: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText,
                           ),
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                          labelStyle: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
                             letterSpacing: 0.2,
-                            color: MyTheme.darkGray,
+                            color: isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText,
                           ),
                         ),
                         inputFormatters: [IDTextInputFormatter()],
@@ -280,18 +283,13 @@ class _ConnectionPageState extends State<ConnectionPage> {
                           alignment: Alignment.topLeft,
                           child: Container(
                               decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 5,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
+                                boxShadow: isDark ? AppleTheme.shadowDark : AppleTheme.shadowLight,
                               ),
                               child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
+                                  borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
                                   child: Material(
-                                      elevation: 4,
+                                      color: isDark ? AppleTheme.darkSurface : AppleTheme.lightSurface,
+                                      elevation: 0,
                                       child: ConstrainedBox(
                                           constraints: BoxConstraints(
                                             maxHeight: maxHeight,
@@ -306,10 +304,11 @@ class _ConnectionPageState extends State<ConnectionPage> {
                                                       child:
                                                           CircularProgressIndicator(
                                                     strokeWidth: 2,
+                                                    color: AppleTheme.primaryBlue,
                                                   )))
                                               : ListView(
                                                   padding:
-                                                      EdgeInsets.only(top: 5),
+                                                      EdgeInsets.only(top: AppleTheme.spacing4),
                                                   children: options
                                                       .map((peer) =>
                                                           AutocompletePeerTile(
@@ -325,21 +324,33 @@ class _ConnectionPageState extends State<ConnectionPage> {
               ),
               Obx(() => Offstage(
                     offstage: _idEmpty.value,
-                    child: IconButton(
-                        onPressed: () {
+                    child: GestureDetector(
+                        onTap: () {
                           setState(() {
                             _idController.clear();
                           });
                         },
-                        icon: Icon(Icons.clear, color: MyTheme.darkGray)),
+                        child: Container(
+                          width: AppleTheme.touchTargetMin,
+                          height: AppleTheme.touchTargetMin,
+                          child: Icon(Icons.clear_rounded, 
+                            color: isDark ? AppleTheme.darkSecondaryText : AppleTheme.lightSecondaryText,
+                            size: 20,
+                          ),
+                        )),
                   )),
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_forward,
-                      color: MyTheme.darkGray, size: 45),
-                  onPressed: onConnect,
+              GestureDetector(
+                onTap: onConnect,
+                child: Container(
+                  width: AppleTheme.touchTargetMin + AppleTheme.spacing8,
+                  height: AppleTheme.touchTargetMin + AppleTheme.spacing8,
+                  margin: EdgeInsets.only(right: AppleTheme.spacing8),
+                  decoration: BoxDecoration(
+                    color: AppleTheme.primaryBlue,
+                    borderRadius: BorderRadius.circular(AppleTheme.radiusMedium),
+                  ),
+                  child: Icon(Icons.arrow_forward_rounded,
+                      color: Colors.white, size: 24),
                 ),
               ),
             ],

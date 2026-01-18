@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/widgets/setting_widgets.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
+import 'package:flutter_hbb/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -35,7 +36,7 @@ class SettingsPage extends StatefulWidget implements PageShape {
   State<SettingsPage> createState() => _SettingsState();
 }
 
-const url = 'https://rustdesk.com/';
+const url = 'https://pixpos.com/';
 
 enum KeepScreenOn {
   never,
@@ -675,7 +676,12 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     final disabledSettings = bind.isDisableSettings();
     final hideSecuritySettings =
         bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) == 'Y';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final settings = SettingsList(
+      lightTheme: AppleSettingsTheme.lightTheme(context),
+      darkTheme: AppleSettingsTheme.darkTheme(context),
+      platform: DevicePlatform.iOS,
+      contentPadding: EdgeInsets.all(AppleTheme.spacing16),
       sections: [
         customClientSection,
         if (!bind.isDisableAccount())
@@ -926,7 +932,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 title: Text(translate("Version: ") + version),
                 value: Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('rustdesk.com',
+                  child: Text('pixpos.com',
                       style: TextStyle(
                         decoration: TextDecoration.underline,
                       )),
@@ -1059,17 +1065,17 @@ void showThemeSettings(OverlayDialogManager dialogManager) async {
 void showAbout(OverlayDialogManager dialogManager) {
   dialogManager.show((setState, close, context) {
     return CustomAlertDialog(
-      title: Text(translate('About RustDesk')),
+      title: Text(translate('About PixPos Remote')),
       content: Wrap(direction: Axis.vertical, spacing: 12, children: [
         Text('Version: $version'),
         InkWell(
             onTap: () async {
-              const url = 'https://rustdesk.com/';
+              const url = 'https://pixpos.com/';
               await launchUrl(Uri.parse(url));
             },
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('rustdesk.com',
+              child: Text('pixpos.com',
                   style: TextStyle(
                     decoration: TextDecoration.underline,
                   )),

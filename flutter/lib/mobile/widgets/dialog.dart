@@ -17,6 +17,11 @@ void _showError() {
 }
 
 void setPermanentPasswordDialog(OverlayDialogManager dialogManager) async {
+  setPasswordDialog();
+}
+
+void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
+  final dialogManager = gFFI.dialogManager;
   final pw = await bind.mainGetPermanentPassword();
   final p0 = TextEditingController(text: pw);
   final p1 = TextEditingController(text: pw);

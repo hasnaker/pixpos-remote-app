@@ -1,0 +1,6 @@
+#!/bin/bash
+apt-get update && apt-get install -y docker.io
+systemctl start docker && systemctl enable docker
+mkdir -p /opt/rustdesk && cd /opt/rustdesk
+docker run -d --name hbbs --restart always -p 21115:21115 -p 21116:21116 -p 21116:21116/udp -p 21118:21118 -v /opt/rustdesk:/root rustdesk/rustdesk-server hbbs
+docker run -d --name hbbr --restart always -p 21117:21117 -p 21119:21119 -v /opt/rustdesk:/root rustdesk/rustdesk-server hbbr
